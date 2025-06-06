@@ -3,8 +3,35 @@ from src.models import db, User
 import jwt
 import datetime
 import os
+from functools import wraps
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+
+def token_required(f):
+    """Decorator to ensure a valid JWT token is provided."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Token is missing'}), 401
+
+        token = auth_header.split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT'),
+                algorithms=['HS256']
+            )
+            current_user = payload['user_id']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'success': False, 'message': 'Token expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -29,6 +56,7 @@ def register():
     db.session.commit()
     
     return jsonify({
+        'success': True,
         'message': 'User registered successfully',
         'user': new_user.to_dict()
     }), 201
@@ -56,6 +84,7 @@ def login():
     }, os.getenv('SECRET_KEY', 'asdf#FGSgvasgf$5$WGT'), algorithm='HS256')
     
     return jsonify({
+        'success': True,
         'message': 'Login successful',
         'token': token,
         'user': user.to_dict()
