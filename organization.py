@@ -8,6 +8,8 @@ class Organization(db.Model, BaseModel):
     name = db.Column(db.String(100), nullable=False)
     logo = db.Column(db.String(255), nullable=True)
     industry = db.Column(db.String(100), nullable=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owner = db.relationship('User', backref='owned_organizations')
     
     # Relationships
     members = db.relationship('OrganizationMember', back_populates='organization')
@@ -27,6 +29,7 @@ class Organization(db.Model, BaseModel):
             'name': self.name,
             'logo': self.logo,
             'industry': self.industry,
+            'owner_id': self.owner_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
