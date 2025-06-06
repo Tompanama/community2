@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    // Allow any host to connect, which is required for CodeSandbox
-    allowedHosts: 'all',
+    // Explicitly allow the CodeSandbox host
+    allowedHosts: ['cf9tvz-5173.csb.app'],
   },
 });
